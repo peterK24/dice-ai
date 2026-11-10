@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Psi Dice · Live logger</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Psi Dice">
+<meta name="theme-color" content="#2E4F3F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F4F0;--surface:#FFFFFF;--ink:#1F2E26;--muted:#6B786E;--line:#E2E4DC;
+  --brand:#2E4F3F;--brand-ink:#F2F0DF;--pt1:#ECF1E3;--pt2:#DCE8CD;--warn:#9A5B1E;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#111915;--surface:#1A2520;--ink:#E7ECE5;--muted:#93A398;--line:#2C3A33;
+    --brand:#86B595;--brand-ink:#0F1A14;--pt1:#21322A;--pt2:#2A4335;--warn:#E6B27A;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Hanken Grotesk",system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:8px 16px 130px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 0;max-width:720px;margin:0 auto}
+.brand{display:flex;gap:10px;align-items:center;font-weight:800;letter-spacing:.02em}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--brand);display:grid;place-items:center;color:var(--brand-ink)}
+h1{font-size:2rem;line-height:1.1;letter-spacing:-.03em;margin:18px 0 6px;font-weight:800}
+h2{font-size:1.05rem;margin:0 0 2px}
+p{margin:0 0 8px}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}
+.f{display:block;font-weight:700;margin:2px 0 8px}
+input.t{width:100%;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;margin-bottom:8px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.seg button{padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.primary{width:100%;padding:16px;border:0;border-radius:12px;background:var(--brand);color:var(--brand-ink);font-weight:700;font-size:1.05rem}
+.ghost{padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.err{color:var(--warn);font-weight:600;margin:8px 0}
+.boardwrap{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.board{max-width:720px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;padding:12px 16px 4px;gap:8px}
+.side{min-width:0}
+.side.right{text-align:right}
+.tname{font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--brand);margin:0 6px 1px;vertical-align:middle}
+.score{font-size:3.2rem;font-weight:500;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.colon{font-size:2.2rem;color:var(--muted);line-height:1.2}
+.meta{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;padding:2px 16px 8px;font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.tabs{max-width:720px;margin:0 auto;display:flex;gap:4px;padding:0 12px 10px}
+.tabs button{flex:1;padding:8px;border:0;border-radius:8px;background:transparent;font-weight:600;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.up{background:var(--brand);color:var(--brand-ink);border-radius:18px;padding:18px;margin:14px 0 4px}
+.up .lab{opacity:.75;font-size:.9rem}
+.up .who{font-size:2.4rem;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:2px 0 4px}
+.up .def{opacity:.85}
+.up button{margin-top:12px;background:transparent;border:1px solid currentColor;border-radius:999px;padding:6px 12px;font-size:.85rem;font-weight:600;color:inherit;opacity:.9}
+.last{font-size:.88rem;color:var(--muted);margin:8px 2px 0}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.chips button{padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:600;text-align:left}
+.g h3{font-size:.9rem;margin:20px 2px 8px;font-weight:700}
+.g h3 span{color:var(--muted);font-weight:500}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ob{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;padding:12px;min-height:66px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.ob b{font-weight:700;line-height:1.2}
+.ob span{font-size:.78rem;color:var(--muted);margin-top:3px;line-height:1.25}
+.ob.p1{background:var(--pt1)}
+.ob.p2{background:var(--pt2)}
+.ob.p3{background:var(--brand);color:var(--brand-ink);border-color:transparent;min-height:76px}
+.ob.p3 b{font-size:1.3rem}
+.ob.p3 span{color:inherit;opacity:.8}
+.ob.wide{grid-column:1/-1}
+.ob:active{transform:scale(.98)}
+.ob:disabled{opacity:.35;transform:none}
+.actions{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:6}
+.actions .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.actions button{padding:12px 6px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-weight:700;font-size:.92rem}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:.9rem;z-index:20;max-width:90vw;text-align:center}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:30}
+.sheet{background:var(--surface);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:24px 20px calc(20px + env(safe-area-inset-bottom))}
+.sheet .k{font-weight:700;color:var(--muted)}
+.sheet .t{font-size:1.7rem;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:6px 0 20px}
+.win{border:2px solid var(--brand)}
+.win .big{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.scroll{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:9px 7px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface)}
+th{font-size:.75rem;color:var(--muted);font-weight:700}
+tr.team td{font-weight:700;background:var(--bg)}
+tr.team td:first-child{background:var(--bg)}
+.log{list-style:none;margin:0;padding:0}
+.log li{display:grid;grid-template-columns:44px 1fr auto;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.log .n{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.log .s{font-variant-numeric:tabular-nums;font-weight:700}
+.log .x{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.ob:active{transform:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const DIE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>';
+
+// Every possible throw outcome. land: fair/short/miss. kind feeds the stat columns. def: what the chosen defender did.
+const OUT = {
+  miss:     {label:'Miss', sub:"Didn't hit the table", land:'miss', pts:0},
+  short:    {label:'Short', sub:'Landed on own half', land:'short', pts:0},
+  stay:     {label:'Stayed on table', land:'fair', pts:0},
+  catch:    {label:'Caught', land:'fair', pts:0, def:'catch'},
+  selfsink: {label:'Self-sink', sub:'No score, naked lap', land:'fair', pts:0, self:true},
+  off:      {label:'Off table, untouched', sub:'Or came to rest on a defender', land:'fair', pts:1, kind:'conv'},
+  drop:     {label:'Dropped', sub:'Includes two-handed catches', land:'fair', pts:1, kind:'conv', def:'drop'},
+  cupstay:  {label:'Cup hit, no drop', sub:'Stayed on table or rested on a defender', land:'fair', pts:1, kind:'cup'},
+  cupcatch: {label:'Cup hit, caught', land:'fair', pts:1, kind:'cup', def:'catch'},
+  cupfloor: {label:'Cup hit, untouched to floor', land:'fair', pts:2, kind:'cupdrop'},
+  cupdrop:  {label:'Cup hit, dropped', sub:'Includes two-handed catches', land:'fair', pts:2, kind:'cupdrop', def:'drop'},
+  sink:     {label:'Sink', sub:'In the cup', land:'fair', pts:3, kind:'sink'}
+};
+
+// Uses Claude's artifact storage when available, otherwise the browser's own storage (when hosted on the web).
+const hasArtifactStore = !!(window.storage && window.storage.get);
+const store = {
+  async get(k){ try{
+    if (hasArtifactStore){ const r = await window.storage.get(k,false); return r ? JSON.parse(r.value) : null; }
+    const v = window.localStorage.getItem(k); return v ? JSON.parse(v) : null;
+  }catch(e){ return null; } },
+  async set(k,v){ try{
+    if (hasArtifactStore) await window.storage.set(k, JSON.stringify(v), false);
+    else window.localStorage.setItem(k, JSON.stringify(v));
+  }catch(e){} },
+  async del(k){ try{
+    if (hasArtifactStore) await window.storage.delete(k,false);
+    else window.localStorage.removeItem(k);
+  }catch(e){} }
+};
+
+const app = document.getElementById('app');
+let G = null, resumeCandidate = null, saved = [];
+let setupNames = ['','','',''], setupFirst = 0, setupErr = '';
+let tab = 'throw', picking = false, alertQ = [], toastTimer = null, clockTimer = null;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const teamName = (g,t) => g.players.filter(p => p.team === t).map(p => p.name).join(' & ');
+const pct = (a,b) => b ? (100*a/b).toFixed(1)+'%' : '—';
+const fmtT = ms => { const s = Math.max(0, Math.floor(ms/1000)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+const blank = () => ({throws:0,fair:0,short:0,miss:0,conv:0,cup:0,cupdrop:0,sink:0,pts:0,catches:0,drops:0,redos:0,selfsink:0});
+
+// Throwing order: A1, B1, A2, B2 (or B first). Players 0,1 = Team 1; 2,3 = Team 2.
+function derive(g){
+  const order = g.firstTeam === 0 ? [0,2,1,3] : [2,0,3,1];
+  let ptr = 0, winner = null, dead = false;
+  const score = [0,0], half = [false,false];
+  const st = g.players.map(blank), alerts = [], scores = [];
+  g.events.forEach((e,i) => {
+    const a = [];
+    if (e.type === 'setThrower') ptr = order.indexOf(e.thrower);
+    else if (e.type === 'redo') st[e.thrower].redos++;
+    else if (e.type === 'throw') {
+      const o = OUT[e.outcome], s = st[e.thrower];
+      s.throws++; s[o.land]++; s.pts += o.pts;
+      if (o.kind) s[o.kind]++;
+      if (o.self) { s.selfsink++; a.push({k:'self', p:e.thrower}); }
+      if (o.def && e.defender != null) st[e.defender][o.def === 'catch' ? 'catches' : 'drops']++;
+      score[g.players[e.thrower].team] += o.pts;
+      for (const t of [0,1]) if (!half[t] && score[t] >= 7) { half[t] = true; a.push({k:'half', team:t}); }
+      if (!dead && ((score[0]===9 && score[1]===11) || (score[0]===11 && score[1]===9))) { dead = true; a.push({k:'dead'}); }
+      if (winner === null && Math.max(score[0],score[1]) >= 14 && Math.abs(score[0]-score[1]) >= 2) {
+        winner = score[0] > score[1] ? 0 : 1; a.push({k:'win', team:winner});
+      }
+      ptr = (ptr + 1) % 4;
+    }
+    alerts[i] = a; scores[i] = [...score];
+  });
+  return {order, ptr, current: order[ptr], score, st, alerts, scores, winner};
+}
+
+function persist(){ if (G) store.set('dice:current', G); }
+
+function eventText(g,e){
+  const P = i => esc(g.players[i].name);
+  if (e.type === 'throw') {
+    const o = OUT[e.outcome];
+    return P(e.thrower) + ' · ' + esc(o.label) + (e.defender != null ? ' by ' + P(e.defender) : '');
+  }
+  if (e.type === 'redo') return P(e.thrower) + ' · redo, doesn\u2019t count';
+  if (e.type === 'sync') return 'Video sync mark';
+  if (e.type === 'setThrower') return 'Thrower changed to ' + P(e.thrower);
+  return '';
+}
+
+function alertText(g,a,d){
+  if (a.k === 'half') return {k:'Halftime', t: esc(teamName(g,a.team)) + ' hit 7. They drink their cups.'};
+  if (a.k === 'dead') return {k:'Dead soldiers', t:'It\u2019s 9\u201311. Everyone pours a little out and takes a sip.'};
+  if (a.k === 'self') return {k:'Self-sink', t: esc(g.players[a.p].name) + ' runs a naked lap.'};
+  if (a.k === 'win') return {k:'Game over', t: esc(teamName(g,a.team)) + ' win ' + d.score[a.team] + '\u2013' + d.score[1-a.team] + '. ' + esc(teamName(g,1-a.team)) + ' drink.'};
+}
+
+function toast(msg){
+  document.querySelector('.toast')?.remove();
+  const el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role','status'); el.textContent = msg;
+  document.body.appendChild(el); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.remove(), 2200);
+}
+
+/* ---------- CSV export ---------- */
+function csvRows(g, id){
+  const d = derive(g); const rows = []; let n = 0;
+  g.events.forEach((e,i) => {
+    if (e.type === 'setThrower') return;
+    const o = e.type === 'throw' ? OUT[e.outcome] : null;
+    if (e.type === 'throw') n++;
+    rows.push([
+      id, e.type === 'throw' ? n : '', e.t, e.at,
+      e.thrower != null ? g.players[e.thrower].name : '',
+      e.thrower != null ? 'Team ' + (g.players[e.thrower].team + 1) : '',
+      e.type === 'throw' ? e.outcome : e.type,
+      o ? o.land : '', o ? o.pts : '',
+      e.defender != null ? g.players[e.defender].name : '',
+      o && o.def ? o.def : '',
+      d.scores[i][0], d.scores[i][1]
+    ]);
+  });
+  return rows;
+}
+const CSV_HEAD = ['game_id','throw_no','ms_since_start','wall_time','thrower','team','outcome','landing','points','defender','defender_action','team1_score','team2_score'];
+const csvCell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+const toCSV = rows => [CSV_HEAD, ...rows].map(r => r.map(csvCell).join(',')).join('\n');
+const gameId = g => 'g' + g.startedAt;
+
+async function exportText(name, text){
+  try {
+    const blob = new Blob([text], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  } catch(e) {}
+  try { await navigator.clipboard.writeText(text); toast('CSV downloaded and copied to clipboard'); }
+  catch(e) { toast('CSV downloaded'); }
+}
+
+/* ---------- Render ---------- */
+function render(){ if (G) renderLive(); else renderSetup(); renderSheet(); }
+
+function renderSetup(){
+  clearInterval(clockTimer);
+  const inp = (i,ph) => `<input class="t" data-name="${i}" value="${esc(setupNames[i])}" placeholder="${ph}" autocomplete="off" aria-label="${ph}">`;
+  app.innerHTML = `
+  <header class="top"><div class="brand"><span class="logo">${DIE}</span><span>PSI DICE</span></div><span class="muted small">Live logger · beta</span></header>
+  <main class="wrap">
+    ${resumeCandidate ? `<section class="card win">
+      <h2>Game in progress</h2>
+      <p class="muted">${esc(teamName(resumeCandidate,0))} vs ${esc(teamName(resumeCandidate,1))}, ${derive(resumeCandidate).score.join('\u2013')}</p>
+      <div class="row"><button class="ghost" data-act="resume">Resume game</button><button class="ghost" data-act="discard">Discard it</button></div>
+    </section>` : ''}
+    <h1>Choose four players.</h1>
+    <p class="muted">List each team in throwing order. Player 1 throws first for their team.</p>
+    <section class="card">
+      <span class="f">Team 1</span>${inp(0,'Player 1')}${inp(1,'Player 2')}
+      <span class="f" style="margin-top:10px">Team 2</span>${inp(2,'Player 1')}${inp(3,'Player 2')}
+    </section>
+    <section class="card">
+      <h2>Who throws first?</h2>
+      <p class="muted small">Call high or low and roll the die.</p>
+      <div class="seg">
+        <button data-act="first" data-v="0" aria-pressed="${setupFirst===0}">Team 1</button>
+        <button data-act="first" data-v="1" aria-pressed="${setupFirst===1}">Team 2</button>
+      </div>
+    </section>
+    <p class="muted small">Filming this game? Start the video first, then tap Start game where the camera can see the screen. Every throw is saved with a timestamp so it lines up with the footage.</p>
+    ${setupErr ? `<p class="err" role="alert">${esc(setupErr)}</p>` : ''}
+    <button class="primary" data-act="start">Start game</button>
+    <section class="card">
+      <h2>Saved games</h2>
+      <p class="muted small">${saved.length ? saved.length + ' game' + (saved.length>1?'s':'') + ' saved on this device.' : 'Finished games show up here.'}</p>
+      ${saved.length ? `<div class="row"><button class="ghost" data-act="exportAll">Export all throws (CSV)</button></div>` : ''}
+    </section>
+  </main>`;
+}
+
+function btn(d, key, def){
+  const o = OUT[key], cls = ['ob', o.pts ? 'p'+o.pts : ''].join(' ');
+  const label = def != null ? o.label + ' by ' + G.players[def].name : o.label;
+  const sub = def != null ? '' : (o.sub || '');
+  return `<button class="${cls}${key==='sink'?' wide':''}" data-act="throw" data-o="${key}" ${def!=null?`data-d="${def}"`:''} ${d.winner!==null?'disabled':''}>
+    <b>${esc(label)}</b>${sub?`<span>${esc(sub)}</span>`:''}</button>`;
+}
+
+function renderLive(){
+  const d = derive(G);
+  const cur = d.current, curTeam = G.players[cur].team;
+  const defs = [0,1,2,3].filter(i => G.players[i].team !== curTeam);
+  const throws = G.events.filter(e => e.type === 'throw').length;
+  const lastIdx = G.events.length - 1, last = G.events[lastIdx];
+  const live = d.winner === null;
+
+  let body = '';
+  if (tab === 'throw') {
+    body = `
+    ${!live ? `<section class="card win">
+      <div class="big">${esc(teamName(G,d.winner))} win ${d.score[d.winner]}\u2013${d.score[1-d.winner]}.</div>
+      <p class="muted">${esc(teamName(G,1-d.winner))} drink. Undo if the last throw was logged wrong.</p>
+      <div class="row"><button class="primary" data-act="finish">Save game</button></div>
+      <div class="row"><button class="ghost" data-act="exportOne">Export this game (CSV)</button></div>
+    </section>` : `
+    <section class="up" aria-live="polite">
+      <div class="lab">Throwing now</div>
+      <div class="who">${esc(G.players[cur].name)}</div>
+      <div class="def">Defending: ${esc(G.players[defs[0]].name)} & ${esc(G.players[defs[1]].name)}</div>
+      <button data-act="pick">${picking ? 'Cancel' : 'Wrong thrower?'}</button>
+    </section>
+    ${picking ? `<div class="chips">${[0,1,2,3].map(i => `<button data-act="setThrower" data-p="${i}">${esc(G.players[i].name)}</button>`).join('')}</div>` : ''}`}
+    ${last ? `<p class="last">Last: ${eventText(G,last)}${last.type==='throw' && OUT[last.outcome].pts ? ' (+' + OUT[last.outcome].pts + ')' : ''}</p>` : ''}
+    <div class="g"><h3>No point</h3><div class="grid">
+      ${btn(d,'miss')}${btn(d,'short')}${btn(d,'stay')}${btn(d,'selfsink')}${btn(d,'catch',defs[0])}${btn(d,'catch',defs[1])}
+    </div></div>
+    <div class="g"><h3>+1 <span>point</span></h3><div class="grid">
+      ${btn(d,'off')}${btn(d,'cupstay')}${btn(d,'drop',defs[0])}${btn(d,'drop',defs[1])}${btn(d,'cupcatch',defs[0])}${btn(d,'cupcatch',defs[1])}
+    </div></div>
+    <div class="g"><h3>+2 <span>points</span></h3><div class="grid">
+      ${btn(d,'cupfloor')}<div></div>${btn(d,'cupdrop',defs[0])}${btn(d,'cupdrop',defs[1])}
+    </div></div>
+    <div class="g"><h3>+3 <span>points</span></h3><div class="grid">${btn(d,'sink')}</div></div>`;
+  } else if (tab === 'box') {
+    const row = (name, s) => `<tr${name.cls?' class="team"':''}><td>${esc(name.n)}</td><td>${s.throws}</td><td>${s.pts}</td><td>${pct(s.fair,s.throws)}</td><td>${s.short}</td><td>${s.miss}</td><td>${s.conv}</td><td>${pct(s.conv,s.fair)}</td><td>${s.cup}</td><td>${s.cupdrop}</td><td>${s.sink}</td><td>${s.throws?(s.pts/s.throws).toFixed(2):'—'}</td><td>${s.catches}</td><td>${s.drops}</td><td>${pct(s.catches,s.catches+s.drops)}</td></tr>`;
+    const sum = idx => idx.reduce((a,i) => { for (const k in a) a[k] += d.st[i][k]; return a; }, blank());
+    body = `<section class="card"><div class="scroll"><table>
+      <thead><tr><th>Player</th><th>Throws</th><th>Pts</th><th>Fair %</th><th>Short</th><th>Miss</th><th>Conv</th><th>Conv %</th><th>Cup</th><th>Cup+drop</th><th>Sinks</th><th>EV/toss</th><th>Catches</th><th>Drops</th><th>Catch %</th></tr></thead>
+      <tbody>
+        ${[0,1].map(t => { const idx = [0,1,2,3].filter(i => G.players[i].team === t);
+          return idx.map(i => row({n:G.players[i].name}, d.st[i])).join('') + row({n:'Team '+(t+1), cls:1}, sum(idx)); }).join('')}
+      </tbody></table></div>
+      <p class="muted small" style="margin-top:10px">Conv % is conversions over fair hits. Catch % is catches over catches plus drops.</p>
+    </section>`;
+  } else {
+    const items = G.events.map((e,i) => ({e,i})).filter(x => x.e.type !== 'setThrower').reverse();
+    let n = G.events.filter(e => e.type === 'throw').length + 1;
+    body = `<section class="card">
+      ${items.length ? `<ul class="log">${items.map(({e,i}) => {
+        if (e.type === 'throw') n--;
+        const pts = e.type === 'throw' ? OUT[e.outcome].pts : null;
+        return `<li><span class="n">${e.type==='throw' ? '#'+n : ''}<br>${fmtT(e.t)}</span><span class="${e.type==='throw'?'':'x'}">${eventText(G,e)}${pts?` <b>+${pts}</b>`:''}</span><span class="s">${d.scores[i][0]}\u2013${d.scores[i][1]}</span></li>`;
+      }).join('')}</ul>` : `<p class="muted">No throws yet. Log the first one from the Throw tab.</p>`}
+      <div class="row"><button class="ghost" data-act="exportOne">Export this game (CSV)</button><button class="ghost" data-act="abandon">End without saving</button></div>
+    </section>`;
+  }
+
+  app.innerHTML = `
+  <div class="boardwrap">
+    <div class="board">
+      <div class="side"><div class="tname">${live && curTeam===0 ? '<span class="dot" style="margin-left:0"></span>' : ''}${esc(teamName(G,0))}</div><div class="score">${d.score[0]}</div></div>
+      <div class="colon">:</div>
+      <div class="side right"><div class="tname">${esc(teamName(G,1))}${live && curTeam===1 ? '<span class="dot" style="margin-right:0"></span>' : ''}</div><div class="score">${d.score[1]}</div></div>
+    </div>
+    <div class="meta"><span>${throws} throw${throws===1?'':'s'}</span><span id="clock">${fmtT(Date.now()-G.startedAt)}</span></div>
+    <div class="tabs" role="tablist">
+      ${[['throw','Throw'],['box','Box score'],['log','Log']].map(([k,l]) => `<button role="tab" aria-selected="${tab===k}" data-act="tab" data-v="${k}">${l}</button>`).join('')}
+    </div>
+  </div>
+  <main class="wrap">${body}</main>
+  <div class="actions"><div class="in">
+    <button data-act="undo" ${G.events.length?'':'disabled'}>Undo</button>
+    <button data-act="redo" ${live?'':'disabled'}>Redo throw</button>
+    <button data-act="sync">Sync mark</button>
+  </div></div>`;
+
+  clearInterval(clockTimer);
+  clockTimer = setInterval(() => { const c = document.getElementById('clock'); if (c && G) c.textContent = fmtT(Date.now()-G.startedAt); }, 1000);
+}
+
+function renderSheet(){
+  document.querySelector('.sheet-bg')?.remove();
+  if (!alertQ.length) return;
+  const a = alertQ[0];
+  const el = document.createElement('div'); el.className = 'sheet-bg';
+  el.innerHTML = `<div class="sheet" role="alertdialog" aria-labelledby="sk"><div class="k" id="sk">${a.k}</div><p class="t">${a.t}</p><button class="primary" data-act="dismiss">Got it</button></div>`;
+  document.body.appendChild(el);
+  el.querySelector('button').focus();
+}
+
+/* ---------- Actions ---------- */
+function addEvent(e){
+  e.t = Date.now() - G.startedAt; e.at = new Date().toISOString();
+  G.events.push(e); persist();
+  const d = derive(G);
+  for (const a of d.alerts[G.events.length-1]) alertQ.push(alertText(G,a,d));
+}
+
+document.addEventListener('input', ev => {
+  const i = ev.target.dataset?.name; if (i != null) setupNames[+i] = ev.target.value;
+});
+
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act;
+
+  if (act === 'first') { setupFirst = +b.dataset.v; render(); return; }
+  if (act === 'start') {
+    const names = setupNames.map(s => s.trim());
+    if (names.some(n => !n)) { setupErr = 'Enter all four player names.'; render(); return; }
+    if (new Set(names.map(n => n.toLowerCase())).size < 4) { setupErr = 'Each player needs a different name.'; render(); return; }
+    setupErr = '';
+    G = { players: names.map((n,i) => ({name:n, team: i<2 ? 0 : 1})), firstTeam: setupFirst, startedAt: Date.now(), events: [] };
+    resumeCandidate = null; tab = 'throw'; picking = false; persist(); render(); return;
+  }
+  if (act === 'resume') { G = resumeCandidate; resumeCandidate = null; tab = 'throw'; render(); return; }
+  if (act === 'discard') { resumeCandidate = null; await store.del('dice:current'); render(); return; }
+  if (act === 'exportAll') { exportText('psi-dice-throws.csv', toCSV(saved.flatMap(g => csvRows(g, gameId(g))))); return; }
+
+  if (act === 'dismiss') { alertQ.shift(); renderSheet(); return; }
+  if (!G) return;
+
+  if (act === 'tab') { tab = b.dataset.v; picking = false; render(); return; }
+  if (act === 'pick') { picking = !picking; render(); return; }
+  if (act === 'setThrower') { addEvent({type:'setThrower', thrower:+b.dataset.p}); picking = false; render(); return; }
+  if (act === 'throw') {
+    const d = derive(G); if (d.winner !== null) return;
+    addEvent({type:'throw', thrower:d.current, outcome:b.dataset.o, defender: b.dataset.d != null ? +b.dataset.d : null});
+    picking = false; render(); return;
+  }
+  if (act === 'undo') {
+    const e = G.events.pop(); persist(); render();
+    if (e) toast('Undid: ' + eventText(G,e).replace(/&amp;/g,'&').replace(/&#39;/g,"'"));
+    return;
+  }
+  if (act === 'redo') {
+    const d = derive(G); addEvent({type:'redo', thrower:d.current}); render();
+    toast(G.players[d.current].name + ' throws again. That one doesn\u2019t count.'); return;
+  }
+  if (act === 'sync') { addEvent({type:'sync'}); render(); toast('Sync mark at ' + fmtT(G.events[G.events.length-1].t)); return; }
+  if (act === 'exportOne') { exportText('psi-dice-' + gameId(G) + '.csv', toCSV(csvRows(G, gameId(G)))); return; }
+  if (act === 'finish') {
+    const d = derive(G);
+    saved.push({...G, endedAt: Date.now(), final: d.score});
+    await store.set('dice:games', saved); await store.del('dice:current');
+    G = null; setupNames = ['','','','']; render(); toast('Game saved'); return;
+  }
+  if (act === 'abandon') {
+    if (!confirm('End this game without saving it?')) return;
+    await store.del('dice:current'); G = null; render(); return;
+  }
+});
+
+(async function init(){
+  saved = (await store.get('dice:games')) || [];
+  const cur = await store.get('dice:current');
+  if (cur && Array.isArray(cur.events)) resumeCandidate = cur;
+  render();
+})();
+</script>
+</body>
+</html>
